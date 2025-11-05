@@ -3,12 +3,13 @@
 @section('title', 'Gerenciar Sites de Votação - Admin')
 
 @section('content')
-<div class="max-w-[1400px] mx-auto p-5">
-    <div class="flex justify-between items-center mb-8">
-        <div>
-            <h1 class="text-4xl font-bold font-robotoCond text-brand-main">Gerenciar Sites de Votação</h1>
-            <p class="text-gray-600 mt-2">Adicione, edite ou remova sites de votação para recompensar seus jogadores</p>
-        </div>
+<div class="max-w-[1200px] mx-auto p-5">
+    <div class="text-center mb-8">
+        <h1 class="text-4xl font-bold font-robotoCond text-brand-main">Gerenciar Sites de Votação</h1>
+        <p class="text-gray-600 mt-2">Adicione, edite ou remova sites de votação para recompensar seus jogadores</p>
+    </div>
+
+    <div class="flex justify-end mb-6">
         <a href="{{ route('admin.vote.create') }}" class="bg-brand-main text-white px-6 py-3 rounded-md font-robotoCond font-bold hover:bg-brand-green transition-colors flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
