@@ -33,17 +33,17 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
 Route::get('/account', [AccountController::class, 'show']);
 Route::get('/account', [AccountController::class, 'show'])->name('login'); // Define login route
-Route::post('/account', [AccountController::class, 'login']);
-Route::post('/account/register', [AccountController::class, 'register']);
+Route::post('/account', [AccountController::class, 'login'])->middleware('throttle:5,1'); // Max 5 tentativas por minuto
+Route::post('/account/register', [AccountController::class, 'register'])->middleware('throttle:3,1'); // Max 3 registros por minuto
 Route::get('/account/profile', [AccountController::class, 'profile']);
 Route::get('/account/game-accounts', [AccountController::class, 'gameAccounts']);
-Route::post('/account/game-accounts', [AccountController::class, 'createGameAccount']);
-Route::post('/account/game-accounts/change-password', [AccountController::class, 'changeGameAccountPassword']);
+Route::post('/account/game-accounts', [AccountController::class, 'createGameAccount'])->middleware('throttle:5,1');
+Route::post('/account/game-accounts/change-password', [AccountController::class, 'changeGameAccountPassword'])->middleware('throttle:5,1');
 Route::get('/account/ygg-points', [DonationController::class, 'index'])->name('donation.index');
-Route::post('/donation/create-payment', [DonationController::class, 'createPayment'])->name('donation.create');
+Route::post('/donation/create-payment', [DonationController::class, 'createPayment'])->name('donation.create')->middleware('throttle:10,1');
 Route::post('/donation/webhook', [DonationController::class, 'webhook'])->name('donation.webhook');
 Route::get('/account/votes', [VoteController::class, 'index'])->name('vote.index');
-Route::post('/account/votes/{id}', [VoteController::class, 'vote'])->name('vote.submit');
+Route::post('/account/votes/{id}', [VoteController::class, 'vote'])->name('vote.submit')->middleware('throttle:20,1');
 Route::get('/account/orders', [AccountController::class, 'orders']);
 Route::post('/logout', [AccountController::class, 'logout']);
 
