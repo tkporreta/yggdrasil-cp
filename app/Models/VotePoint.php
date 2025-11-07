@@ -40,4 +40,16 @@ class VotePoint extends Model
         $votePoint = self::where('user_id', $userId)->first();
         return $votePoint ? $votePoint->points : 0;
     }
+
+    public static function deductPoints($userId, $points)
+    {
+        $votePoint = self::where('user_id', $userId)->first();
+        
+        if (!$votePoint || $votePoint->points < $points) {
+            return false;
+        }
+        
+        $votePoint->decrement('points', $points);
+        return true;
+    }
 }

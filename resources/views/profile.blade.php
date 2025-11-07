@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="flex-1 small:py-12" data-testid="account-page">
-    <div class="flex-1 h-full max-w-4xl mx-auto bg-white flex flex-col">
+    <div class="flex-1 h-full max-w-5xl mx-auto bg-white flex flex-col">
         <div class="grid grid-cols-1 small:grid-cols-[240px_1fr] py-12">
             <!-- Sidebar -->
             <div>
@@ -26,6 +26,8 @@
                                 <li><a class="text-brand-main hover:underline hover:text-ui-fg-base font-robotoCond uppercase" data-testid="overview-link" href="/account">Overview</a></li>
                                 <li><a class="text-brand-main hover:underline hover:text-ui-fg-base font-robotoCond uppercase" data-testid="game-accounts-link" href="/account/game-accounts">Game Accounts</a></li>
                                 <li><a class="text-brand-main hover:underline hover:text-ui-fg-base font-robotoCond uppercase" data-testid="ygg-points-link" href="/account/ygg-points">Ygg Points</a></li>
+                                <li><a class="text-brand-main hover:underline hover:text-ui-fg-base font-robotoCond uppercase" data-testid="votes-link" href="/account/votes">Votos</a></li>
+                                <li><a class="text-brand-main hover:underline hover:text-ui-fg-base font-robotoCond uppercase" data-testid="roulette-link" href="/account/roulette">Roleta</a></li>
                                 <li><a class="text-brand-main hover:underline hover:text-ui-fg-base font-robotoCond uppercase" data-testid="orders-link" href="/account/orders">Transactions</a></li>
                                 <li><a class="text-brand-main hover:underline hover:text-ui-fg-base font-robotoCond uppercase" data-testid="download-link" href="/download">Download</a></li>
                                 <li><a class="hover:underline hover:text-ui-fg-base font-semibold uppercase font-robotoCond text-brand-main" data-testid="profile-link" href="/account/profile">Profile</a></li>

@@ -1,9 +1,91 @@
 @extends('layouts.app')
 
-@section('title', 'Sistema de Votação - Myth of Yggdrasil')
-@section('description', 'Vote no servidor e ganhe recompensas!')
+@section('title', 'Histórico da Roleta')
 
 @section('content')
+<style>
+    .history-card {
+        background: white;
+        border-radius: 8px;
+        padding: 24px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .history-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .history-table thead {
+        background: #f8f9fa;
+    }
+
+    .history-table th {
+        padding: 12px;
+        text-align: left;
+        font-weight: 600;
+        color: #495057;
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    .history-table td {
+        padding: 12px;
+        color: #212529;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .history-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .history-table tbody tr:hover {
+        background: #f8f9fa;
+    }
+
+    .item-cell {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .item-cell img {
+        width: 40px;
+        height: 40px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6c757d;
+    }
+
+    .empty-state svg {
+        width: 64px;
+        height: 64px;
+        margin-bottom: 16px;
+        color: #adb5bd;
+    }
+
+    .back-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: #f39c12;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        margin-bottom: 20px;
+    }
+
+    .back-button:hover {
+        background: #e67e22;
+        transform: translateY(-1px);
+    }
+</style>
+
 <div class="flex-1 small:py-12" data-testid="account-page">
     <div class="flex-1 h-full max-w-5xl mx-auto bg-white flex flex-col">
         <div class="grid grid-cols-1 small:grid-cols-[240px_1fr] py-12">
@@ -50,8 +132,8 @@
                                 <li><a class="text-brand-main hover:underline hover:text-ui-fg-base font-robotoCond uppercase" href="/account">Overview</a></li>
                                 <li><a class="text-brand-main hover:underline hover:text-ui-fg-base font-robotoCond uppercase" href="/account/game-accounts">Game Accounts</a></li>
                                 <li><a class="text-brand-main hover:underline hover:text-ui-fg-base font-robotoCond uppercase" href="/account/ygg-points">Ygg Points</a></li>
-                                <li><a class="hover:underline hover:text-ui-fg-base font-semibold uppercase font-robotoCond text-brand-main" href="/account/votes">Votos</a></li>
-                                <li><a class="text-brand-main hover:underline hover:text-ui-fg-base font-robotoCond uppercase" href="/account/roulette">Roleta</a></li>
+                                <li><a class="text-brand-main hover:underline hover:text-ui-fg-base font-robotoCond uppercase" href="/account/votes">Votos</a></li>
+                                <li><a class="hover:underline hover:text-ui-fg-base font-semibold uppercase font-robotoCond text-brand-main" href="/account/roulette">Roleta</a></li>
                                 <li><a class="text-brand-main hover:underline hover:text-ui-fg-base font-robotoCond uppercase" href="/account/orders">Transactions</a></li>
                                 <li><a class="text-brand-main hover:underline hover:text-ui-fg-base font-robotoCond uppercase" href="/download">Download</a></li>
                                 <li><a class="text-brand-main hover:underline hover:text-ui-fg-base font-robotoCond uppercase" href="/account/profile">Profile</a></li>
@@ -78,136 +160,66 @@
             <!-- Main Content -->
             <div class="flex-1">
                 <div class="w-full">
-                    <header class="text-center mb-8">
-                        <h1 class="text-3xl font-bold font-robotoCond text-brand-main mb-2">Sistema de Votação</h1>
-                        <p class="text-gray-600 mb-4">Vote nos sites abaixo e ganhe pontos para trocar por recompensas!</p>
-                        <div class="bg-brand-main text-white px-6 py-2 rounded-lg inline-block">
-                            <span class="font-bold text-lg">Seus Pontos: {{ $userPoints }}</span>
+                    <!-- Page Header -->
+                    <div class="mb-6 flex items-center justify-between">
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-900">📜 Histórico da Roleta</h1>
+                            <p class="text-gray-600 mt-1">Visualize todas as suas rolagens anteriores</p>
                         </div>
-                    </header>
-                    </header>
-
-    @if(session('message'))
-    <div class="mb-6 p-4 rounded-md {{ session('message_type') === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
-        {{ session('message') }}
-    </div>
-    @endif
-
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        @forelse($sites as $site)
-        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-            @if($site->cover)
-            <div class="h-40 bg-gray-200">
-                <img src="{{ asset('storage/' . $site->cover) }}" alt="{{ $site->name }}" class="w-full h-full object-cover">
-            </div>
-            @else
-            <div class="h-40 bg-gradient-to-br from-brand-main to-brand-green flex items-center justify-center">
-                <span class="text-white text-3xl font-bold">{{ substr($site->name, 0, 1) }}</span>
-            </div>
-            @endif
-            
-            <div class="p-5">
-                <h2 class="text-xl font-bold font-robotoCond text-brand-main mb-2">{{ $site->name }}</h2>
-                <p class="text-gray-600 mb-4">
-                    <span class="font-bold text-brand-green">+{{ $site->points }} pontos</span>
-                </p>
-                
-                @if($site->can_vote)
-                <button onclick="vote({{ $site->id }}, '{{ $site->name }}')" 
-                    class="w-full bg-brand-main text-white px-4 py-2 rounded-md font-bold hover:bg-brand-green transition-colors vote-btn"
-                    data-site-id="{{ $site->id }}">
-                    Votar Agora
-                </button>
-                @else
-                <div class="text-center">
-                    <div class="bg-gray-200 text-gray-600 px-4 py-2 rounded-md font-bold mb-2">
-                        Aguarde
+                        <a href="{{ route('roulette.index') }}" class="back-button">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                            </svg>
+                            Voltar
+                        </a>
                     </div>
-                    <p class="text-sm text-gray-500">
-                        Próximo voto em: <span class="font-mono font-bold time-left" data-site-id="{{ $site->id }}">{{ $site->time_left }}</span>
-                    </p>
-                </div>
-                @endif
-            </div>
-        </div>
-        @empty
-        <div class="col-span-full text-center py-10">
-            <p class="text-gray-500 text-lg">Nenhum site de votação disponível no momento.</p>
-        </div>
-        @endforelse
-    </div>
+
+                    <!-- History Table -->
+                    <div class="history-card">
+                        @if ($history->count() > 0)
+                            <table class="history-table">
+                                <thead>
+                                    <tr>
+                                        <th>Item</th>
+                                        <th>Personagem</th>
+                                        <th>Data</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($history as $item)
+                                        <tr>
+                                            <td>
+                                                <div class="item-cell">
+                                                    <img src="https://static.divine-pride.net/images/items/item/{{ $item->item_id }}.png" 
+                                                         alt="{{ $item->item_name }}"
+                                                         onerror="this.src='data:image/svg+xml,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; width=&quot;40&quot; height=&quot;40&quot;><text x=&quot;20&quot; y=&quot;20&quot; text-anchor=&quot;middle&quot; dominant-baseline=&quot;middle&quot; font-size=&quot;25&quot;>❓</text></svg>'">
+                                                    <span class="font-medium">{{ $item->item_name }}</span>
+                                                </div>
+                                            </td>
+                                            <td>Char ID: {{ $item->char_id ?? 'N/A' }}</td>
+                                            <td>{{ \Carbon\Carbon::parse($item->spin_date)->format('d/m/Y H:i:s') }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+
+                            <!-- Pagination -->
+                            <div class="mt-6">
+                                {{ $history->links() }}
+                            </div>
+                        @else
+                            <div class="empty-state">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                                </svg>
+                                <h2 class="text-xl font-semibold text-gray-700 mb-2">Nenhum histórico ainda</h2>
+                                <p class="text-gray-600">Você ainda não girou a roleta. Que tal tentar a sorte?</p>
+                            </div>
+                        @endif
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-
-<script>
-function vote(siteId, siteName) {
-    const btn = document.querySelector(`.vote-btn[data-site-id="${siteId}"]`);
-    const originalText = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = 'Processando...';
-    
-                fetch(`/account/votes/${siteId}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert(data.message);
-            // Abrir site de votação em nova aba
-            window.open(data.url, '_blank');
-            // Recarregar página após 1 segundo
-            setTimeout(() => {
-                window.location.reload();
-            }, 1000);
-        } else {
-            alert(data.message);
-            btn.disabled = false;
-            btn.innerHTML = originalText;
-        }
-    })
-    .catch(error => {
-        console.error('Erro:', error);
-        alert('Ocorreu um erro ao processar seu voto. Tente novamente.');
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-    });
-}
-
-// Atualizar contadores de tempo a cada segundo
-setInterval(() => {
-    document.querySelectorAll('.time-left').forEach(el => {
-        const timeStr = el.textContent;
-        const parts = timeStr.split(':');
-        if (parts.length === 3) {
-            let hours = parseInt(parts[0]);
-            let minutes = parseInt(parts[1]);
-            let seconds = parseInt(parts[2]);
-            
-            if (seconds > 0) {
-                seconds--;
-            } else if (minutes > 0) {
-                minutes--;
-                seconds = 59;
-            } else if (hours > 0) {
-                hours--;
-                minutes = 59;
-                seconds = 59;
-            } else {
-                // Tempo acabou, recarregar página
-                window.location.reload();
-                return;
-            }
-            
-            el.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-        }
-    });
-}, 1000);
-</script>
 @endsection

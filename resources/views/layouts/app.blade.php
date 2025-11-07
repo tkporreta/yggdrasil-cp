@@ -105,6 +105,9 @@
                                                     <a href="{{ route('admin.donations.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 font-robotoCond">
                                                         💰 Gerenciar Doações
                                                     </a>
+                                                    <a href="{{ route('admin.roulette.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 font-robotoCond">
+                                                        🎰 Gerenciar Roleta
+                                                    </a>
                                                 </div>
                                             </div>
                                         </div>
