@@ -6,6 +6,7 @@ use App\Http\Controllers\NewsController;
 use App\Http\Controllers\VoteController;
 use App\Http\Controllers\DonationController;
 use App\Http\Controllers\RouletteController;
+use App\Http\Controllers\TransferController;
 use App\Http\Controllers\Admin\RouletteController as AdminRouletteController;
 
 Route::get('/', function () {
@@ -60,6 +61,8 @@ Route::get('/account/roulette', [RouletteController::class, 'index'])->name('rou
 Route::post('/account/roulette/spin', [RouletteController::class, 'spin'])->name('roulette.spin')->middleware('throttle:20,1');
 Route::get('/account/roulette/history', [RouletteController::class, 'history'])->name('roulette.history');
 Route::get('/account/orders', [AccountController::class, 'orders']);
+Route::get('/account/transfer', [TransferController::class, 'index'])->name('transfer.index');
+Route::post('/account/transfer', [TransferController::class, 'transfer'])->name('transfer.store')->middleware('throttle:10,1');
 Route::post('/logout', [AccountController::class, 'logout']);
 
 Route::get('/download', function () {

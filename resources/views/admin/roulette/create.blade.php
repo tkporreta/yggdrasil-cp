@@ -8,7 +8,7 @@
         <a href="{{ route('admin.roulette.index') }}" class="text-brand-main hover:underline font-robotoCond mb-4 inline-block">
             ← Voltar para Gerenciar Roleta
         </a>
-        <h1 class="text-4xl font-bold font-robotoCond text-brand-main">Adicionar Novo Item</h1>
+        <h1 class="text-4xl font-bold font-robotoCond text-brand-main text-center">Adicionar Novo Item</h1>
     </div>
 
     <div class="bg-white rounded-lg shadow p-8">

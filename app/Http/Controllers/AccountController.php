@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 
+use App\Models\YggPoint;
 use App\Models\VotePoint;
 
 class AccountController extends Controller
@@ -18,7 +19,7 @@ class AccountController extends Controller
         }
         
         $userId = session('user_id');
-        $userPoints = VotePoint::getPoints($userId);
+        $userPoints = YggPoint::getPoints($userId);
         
         return view('overview', [
             'userPoints' => $userPoints
@@ -152,7 +153,26 @@ class AccountController extends Controller
         if (!session('user_id')) {
             return redirect('/account');
         }
-        return view('orders');
+        
+        $userId = session('user_id');
+        
+        // Buscar transferências do usuário
+        $transfers = DB::table('point_transfers')
+            ->where('user_id', $userId)
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($transfer) {
+                // Buscar informações da conta de destino
+                $account = DB::connection('ragnarok')
+                    ->table('login')
+                    ->where('account_id', $transfer->account_id)
+                    ->first();
+                
+                $transfer->account_name = $account ? $account->userid : 'Conta #' . $transfer->account_id;
+                return $transfer;
+            });
+        
+        return view('orders', ['transfers' => $transfers]);
     }
 
     public function createGameAccount(Request $request)
@@ -176,6 +196,8 @@ class AccountController extends Controller
         ]);
 
         try {
+            $userId = session('user_id');
+            
             // Criar conta na tabela login do rAthena
             DB::connection('ragnarok')->table('login')->insert([
                 'userid' => $request->userid,
@@ -195,7 +217,7 @@ class AccountController extends Controller
                 'pincode_change' => 0,
                 'vip_time' => 0,
                 'old_group' => 0,
-                'web_auth_token' => null, // NULL ao invés de string vazia
+                'web_auth_token' => $userId, // Associar com o ID do usuário web
                 'web_auth_token_enabled' => 0,
             ]);
 

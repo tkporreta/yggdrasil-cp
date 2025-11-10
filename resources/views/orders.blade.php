@@ -82,14 +82,69 @@
             <div class="flex-1">
                 <div class="w-full" data-testid="orders-page-wrapper">
                     <div class="mb-8 flex flex-col gap-y-4">
-                        <h1 class="text-2xl-semi">Transactions</h1>
-                        <p class="text-base-regular">View your previous transactions and their status.</p>
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h1 class="text-2xl-semi">Transactions</h1>
+                                <p class="text-base-regular">View your previous transactions and their status.</p>
+                            </div>
+                            <a 
+                                href="{{ route('transfer.index') }}" 
+                                class="bg-brand-main text-white px-4 py-2 rounded-md font-robotoCond font-bold hover:bg-brand-green transition-colors whitespace-nowrap text-sm"
+                            >
+                                + Nova Transação
+                            </a>
+                        </div>
                     </div>
                     <div>
-                        <div class="w-full flex flex-col items-center gap-y-4" data-testid="no-orders-container">
-                            <h2 class="text-large-semi">Nothing to see here</h2>
-                            <p class="text-base-regular">You don't have any orders yet, let us change that :)</p>
-                        </div>
+                        @if($transfers->isEmpty())
+                            <div class="w-full flex flex-col items-center gap-y-4" data-testid="no-orders-container">
+                                <h2 class="text-large-semi">Nothing to see here</h2>
+                                <p class="text-base-regular">You don't have any transactions yet, let us change that :)</p>
+                            </div>
+                        @else
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left font-robotoCond">
+                                    <thead class="border-b border-gray-200">
+                                        <tr class="text-sm text-gray-600">
+                                            <th class="py-3 px-4">Data</th>
+                                            <th class="py-3 px-4">Conta</th>
+                                            <th class="py-3 px-4 text-right">Ygg Points</th>
+                                            <th class="py-3 px-4 text-right">Vote Points</th>
+                                            <th class="py-3 px-4 text-right">Cash Points</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($transfers as $transfer)
+                                            <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                                <td class="py-4 px-4 text-sm">
+                                                    {{ \Carbon\Carbon::parse($transfer->created_at)->format('d/m/Y H:i') }}
+                                                </td>
+                                                <td class="py-4 px-4">
+                                                    <span class="font-semibold">{{ $transfer->account_name }}</span>
+                                                </td>
+                                                <td class="py-4 px-4 text-right">
+                                                    @if($transfer->ygg_points > 0)
+                                                        <span class="text-yellow-700 font-semibold">{{ number_format($transfer->ygg_points) }}</span>
+                                                    @else
+                                                        <span class="text-gray-400">-</span>
+                                                    @endif
+                                                </td>
+                                                <td class="py-4 px-4 text-right">
+                                                    @if($transfer->vote_points > 0)
+                                                        <span class="text-blue-700 font-semibold">{{ number_format($transfer->vote_points) }}</span>
+                                                    @else
+                                                        <span class="text-gray-400">-</span>
+                                                    @endif
+                                                </td>
+                                                <td class="py-4 px-4 text-right">
+                                                    <span class="text-green-700 font-bold">{{ number_format($transfer->cash_points) }}</span>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>

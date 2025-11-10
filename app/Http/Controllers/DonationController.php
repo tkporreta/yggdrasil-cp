@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Transaction;
 use App\Models\VotePoint;
+use App\Models\YggPoint;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -61,7 +62,7 @@ class DonationController extends Controller
 
         $userId = session('user_id');
         $user = User::find($userId);
-        $userPoints = VotePoint::getPoints($userId);
+        $userPoints = YggPoint::getPoints($userId);
 
         // Buscar últimas transações do usuário
         $transactions = Transaction::where('user_id', $userId)
@@ -236,8 +237,8 @@ class DonationController extends Controller
             'paid_at' => now()
         ]);
 
-        // Adicionar pontos ao usuário
-        VotePoint::addPoints($transaction->user_id, $transaction->points);
+        // Adicionar Ygg Points ao usuário (não Vote Points)
+        YggPoint::addPoints($transaction->user_id, $transaction->points);
 
         Log::info('Payment processed successfully', [
             'transaction_id' => $transaction->id,
@@ -330,8 +331,8 @@ class DonationController extends Controller
             'paid_at' => now()
         ]);
 
-        // Adicionar pontos ao usuário
-        VotePoint::addPoints($transaction->user_id, $transaction->points);
+        // Adicionar Ygg Points ao usuário (não Vote Points)
+        YggPoint::addPoints($transaction->user_id, $transaction->points);
 
         Log::info('Transaction manually processed by admin', [
             'transaction_id' => $transaction->id,
