@@ -58,6 +58,7 @@ Route::post('/donation/webhook', [DonationController::class, 'webhook'])->name('
 Route::get('/account/votes', [VoteController::class, 'index'])->name('vote.index');
 Route::post('/account/votes/{id}', [VoteController::class, 'vote'])->name('vote.submit')->middleware('throttle:20,1');
 Route::get('/account/roulette', [RouletteController::class, 'index'])->name('roulette.index');
+Route::post('/account/roulette/select-account', [RouletteController::class, 'selectAccount'])->name('roulette.selectAccount');
 Route::post('/account/roulette/spin', [RouletteController::class, 'spin'])->name('roulette.spin')->middleware('throttle:20,1');
 Route::get('/account/roulette/history', [RouletteController::class, 'history'])->name('roulette.history');
 Route::get('/account/orders', [AccountController::class, 'orders']);

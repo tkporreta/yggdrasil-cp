@@ -32,12 +32,18 @@ Um painel de controle moderno para servidores Ragnarok Online, desenvolvido em L
    DB_PASSWORD=sua_senha
    ```
 
-4. **Execute as migrações:**
+4. **Execute as migrações do Laravel:**
    ```bash
    php artisan migrate
    ```
 
-5. **Inicie o servidor:**
+5. **Configure o banco de dados Ragnarok (IMPORTANTE):**
+   ```bash
+   mysql -u root -p < database/ragnarok_setup.sql
+   ```
+   > ⚠️ **Este passo é obrigatório!** Remove a constraint UNIQUE do `web_auth_token` para permitir o sistema de múltiplas contas por usuário.
+
+6. **Inicie o servidor:**
    ```bash
    chmod +x start.sh
    ./start.sh
@@ -66,9 +72,26 @@ npm install && npm run build
 # Executar migrações
 php artisan migrate
 
+# Configurar banco Ragnarok (OBRIGATÓRIO para multi-contas)
+mysql -u root -p < database/ragnarok_setup.sql
+
 # Iniciar servidor
 php artisan serve --host=0.0.0.0 --port=8000
 ```
+
+## 🎮 Sistema de Multi-Contas
+
+Este painel suporta **múltiplas contas de jogo por usuário web**:
+
+- Um usuário web pode criar várias contas de jogo (personagens)
+- Cada conta tem seus próprios Cash Points e inventário
+- Sistema de roleta permite selecionar qual conta usar
+- Transferências de pontos são vinculadas ao usuário web
+
+**Banco de Dados:**
+- `mysql.users` → Usuários do painel web
+- `ragnarok.login` → Contas de jogo (linkadas via `web_auth_token`)
+- Relação: 1 usuário web : N contas de jogo
 
 ## 🌐 Acesso
 

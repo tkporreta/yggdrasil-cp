@@ -33,29 +33,41 @@ class RouletteController extends Controller
         }
 
         $userId = session('user_id');
-        $userEmail = session('email');
         
-        // Buscar account_id da tabela login usando o email
-        $loginAccount = DB::connection('ragnarok')->table('login')
-            ->where('email', $userEmail)
-            ->first();
+        // Buscar todas as contas de jogo do usuário
+        $gameAccounts = DB::connection('ragnarok')->table('login')
+            ->where('web_auth_token', $userId)
+            ->select('account_id', 'userid')
+            ->get();
         
-        \Log::info('Login account search', [
-            'email' => $userEmail, 
-            'found' => $loginAccount ? 'yes' : 'no',
-            'account_id' => $loginAccount ? $loginAccount->account_id : null
+        \Log::info('Game accounts search', [
+            'user_id' => $userId,
+            'found_accounts' => $gameAccounts->count()
         ]);
         
-        if (!$loginAccount) {
-            \Log::error('Login account not found', ['email' => $userEmail]);
-            return redirect('/account')->with('message', 'Você precisa criar uma conta de jogo primeiro.')
+        if ($gameAccounts->isEmpty()) {
+            \Log::error('No game accounts found', ['user_id' => $userId]);
+            return redirect('/account/game-accounts')->with('message', 'Você precisa criar uma conta de jogo primeiro.')
                 ->with('message_type', 'error');
         }
 
-        $account_id = $loginAccount->account_id;
+        // Pegar conta selecionada da sessão ou primeira conta
+        $selectedAccountId = session('roulette_account_id', $gameAccounts->first()->account_id);
+        
+        // Verificar se a conta selecionada pertence ao usuário
+        $selectedAccount = $gameAccounts->firstWhere('account_id', $selectedAccountId);
+        if (!$selectedAccount) {
+            $selectedAccount = $gameAccounts->first();
+            $selectedAccountId = $selectedAccount->account_id;
+        }
+        
+        // Salvar na sessão se ainda não foi salvo
+        if (!session('roulette_account_id')) {
+            session(['roulette_account_id' => $selectedAccountId]);
+        }
         
         // Obter saldo de CASH POINTS do banco ragnarok
-        $cash_points = $this->getCashPoints($account_id);
+        $cash_points = $this->getCashPoints($selectedAccountId);
         
         // Pegar configurações e itens ativos do banco
         $settings = RouletteSetting::current();
@@ -70,7 +82,7 @@ class RouletteController extends Controller
         })->toArray();
         
         // Obter histórico recente do usuário com paginação (5 por página)
-        $history = RouletteLog::where('account_id', $account_id)
+        $history = RouletteLog::where('account_id', $selectedAccountId)
             ->orderBy('spin_date', 'desc')
             ->paginate(5);
 
@@ -78,7 +90,10 @@ class RouletteController extends Controller
             'cash_points' => $cash_points,
             'spin_cost' => $settings->spin_cost,
             'roulette_items' => $roulette_items,
-            'history' => $history
+            'history' => $history,
+            'game_accounts' => $gameAccounts,
+            'selected_account_id' => $selectedAccountId,
+            'selected_account_name' => $selectedAccount->userid
         ]);
     }
 
@@ -101,23 +116,31 @@ class RouletteController extends Controller
         }
 
         $userId = session('user_id');
-        $userEmail = session('email');
         $settings = RouletteSetting::current();
         $spin_cost = $settings->spin_cost;
 
-        // Buscar account_id da tabela login usando o email
-        $loginAccount = DB::connection('ragnarok')->table('login')
-            ->where('email', $userEmail)
-            ->first();
-
-        if (!$loginAccount) {
+        // Pegar account_id da sessão (definido ao selecionar conta)
+        $account_id = session('roulette_account_id');
+        
+        if (!$account_id) {
             return response()->json([
                 'success' => false,
-                'message' => 'Você precisa criar uma conta de jogo primeiro.'
+                'message' => 'Selecione uma conta de jogo primeiro.'
             ]);
         }
-
-        $account_id = $loginAccount->account_id;
+        
+        // Verificar se a conta pertence ao usuário
+        $accountBelongsToUser = DB::connection('ragnarok')->table('login')
+            ->where('account_id', $account_id)
+            ->where('web_auth_token', $userId)
+            ->exists();
+            
+        if (!$accountBelongsToUser) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Conta inválida.'
+            ]);
+        }
 
         // Recarregar cash points antes de processar
         $cash_points = $this->getCashPoints($account_id);
@@ -219,6 +242,42 @@ class RouletteController extends Controller
         }
     }
 
+    // Selecionar conta para usar na roleta
+    public function selectAccount(Request $request)
+    {
+        $request->validate([
+            'account_id' => 'required|integer'
+        ]);
+        
+        $userId = session('user_id');
+        $accountId = $request->account_id;
+        
+        // Verificar se a conta pertence ao usuário
+        $account = DB::connection('ragnarok')->table('login')
+            ->where('account_id', $accountId)
+            ->where('web_auth_token', $userId)
+            ->first();
+            
+        if (!$account) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Conta inválida.'
+            ]);
+        }
+        
+        // Salvar na sessão
+        session(['roulette_account_id' => $accountId]);
+        
+        // Obter cash points da conta selecionada
+        $cash_points = $this->getCashPoints($accountId);
+        
+        return response()->json([
+            'success' => true,
+            'account_name' => $account->userid,
+            'cash_points' => $cash_points
+        ]);
+    }
+
     // Página de histórico completo
     public function history()
     {
@@ -228,21 +287,18 @@ class RouletteController extends Controller
         }
 
         $userId = session('user_id');
-        $userEmail = session('email');
         
-        // Buscar account_id da tabela login usando o email
-        $loginAccount = DB::connection('ragnarok')->table('login')
-            ->where('email', $userEmail)
-            ->first();
+        // Buscar todas as contas do usuário e pegar histórico de todas
+        $gameAccounts = DB::connection('ragnarok')->table('login')
+            ->where('web_auth_token', $userId)
+            ->pluck('account_id');
         
-        if (!$loginAccount) {
-            return redirect('/account')->with('message', 'Você precisa criar uma conta de jogo primeiro.')
+        if ($gameAccounts->isEmpty()) {
+            return redirect('/account/game-accounts')->with('message', 'Você precisa criar uma conta de jogo primeiro.')
                 ->with('message_type', 'error');
         }
-
-        $account_id = $loginAccount->account_id;
         
-        $history = RouletteLog::where('account_id', $account_id)
+        $history = RouletteLog::whereIn('account_id', $gameAccounts)
             ->orderBy('spin_date', 'desc')
             ->paginate(20);
 

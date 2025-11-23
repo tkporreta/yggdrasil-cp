@@ -26,17 +26,32 @@
     }
 
     .roulette-slots {
-        display: flex;
-        justify-content: center;
-        gap: 8px;
-        padding: 20px;
+        position: relative;
+        overflow: hidden;
+        padding: 20px 0;
         background: #f8f9fa;
         border-radius: 8px;
-        margin: 20px 0;
+        margin: 20px auto;
+        height: 130px;
+        max-width: 700px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .roulette-container {
+        display: flex;
+        gap: 8px;
+        position: relative;
+        will-change: transform;
+        padding: 0;
+        align-items: center;
     }
 
     .roulette-slot {
         width: 70px;
+        min-width: 70px;
+        max-width: 70px;
         height: 90px;
         border-radius: 8px;
         border: 2px solid #dee2e6;
@@ -46,14 +61,25 @@
         align-items: center;
         justify-content: center;
         padding: 8px;
-        transition: all 0.2s ease;
+        flex-shrink: 0;
+        box-sizing: border-box;
+        opacity: 1;
+        transition: opacity 0.2s ease;
     }
 
-    .roulette-center-slot {
-        transform: scale(1.1);
-        border-color: #f39c12;
-        box-shadow: 0 0 15px rgba(243, 156, 18, 0.4);
-        background: #fff9f0;
+    .roulette-center-marker {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: 74px;
+        height: 94px;
+        border: 3px solid #f39c12;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(243, 156, 18, 0.6), inset 0 0 10px rgba(243, 156, 18, 0.2);
+        background: transparent;
+        pointer-events: none;
+        z-index: 10;
     }
 
     .roulette-slot img {
@@ -259,14 +285,37 @@
             <div class="flex-1">
                 <div class="w-full">
                     <!-- Page Title -->
-                    <div class="mb-6 text-center">
-                        <h1 class="text-2xl font-bold text-gray-900">🎰 Roleta de Prêmios</h1>
-                        <p class="text-gray-600 mt-1">Teste sua sorte e ganhe itens incríveis!</p>
+                    <div class="w-full text-center text-brand-main mb-6">
+                        <div class="flex items-center justify-center mb-1">
+                            <span class="text-4xl mr-3">🎰</span>
+                            <h1 class="uppercase text-2xl md:text-4xl font-core">Roleta de Prêmios</h1>
+                        </div>
+                        <p class="text-base font-robotoCond leading-6 mt-1">Teste sua sorte e ganhe itens incríveis!</p>
+                    </div>
+
+                    <!-- Account Selector -->
+                    <div class="roulette-card mb-4">
+                        <div class="text-sm text-gray-700 mb-3 font-semibold">🎮 Selecione a Conta de Jogo</div>
+                        <div class="flex items-center gap-3">
+                            <select id="account-selector" class="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-brand-main focus:border-brand-main font-robotoCond text-sm">
+                                @foreach($game_accounts as $account)
+                                    <option value="{{ $account->account_id }}" {{ $account->account_id == $selected_account_id ? 'selected' : '' }}>
+                                        {{ $account->userid }} (ID: {{ $account->account_id }})
+                                    </option>
+                                @endforeach
+                            </select>
+                            <div class="text-xs text-gray-500">
+                                Conta Selecionada: <span id="selected-account-name" class="font-semibold text-brand-main">{{ $selected_account_name }}</span>
+                            </div>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-2">
+                            ℹ️ Os Cash Points serão deduzidos desta conta e os prêmios serão enviados para o storage desta conta.
+                        </div>
                     </div>
 
                     <!-- Cash Points Display -->
                     <div class="roulette-card text-center">
-                        <div class="text-sm text-gray-600 mb-2">Seus Cash Points</div>
+                        <div class="text-sm text-gray-600 mb-2">Cash Points da Conta Selecionada</div>
                         <div class="points-badge">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
                                 <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
@@ -280,14 +329,12 @@
                     <!-- Roulette Slots -->
                     <div class="roulette-card">
                         <div class="roulette-slots" id="roulette-slots">
-                            @for ($i = 0; $i < 7; $i++)
-                                <div class="roulette-slot {{ $i === 3 ? 'roulette-center-slot' : '' }} rarity-0" data-index="{{ $i }}">
-                                    <img src="https://static.divine-pride.net/images/items/item/501.png" 
-                                         alt="Item"
-                                         onerror="this.src='data:image/svg+xml,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; width=&quot;40&quot; height=&quot;40&quot;><text x=&quot;20&quot; y=&quot;20&quot; text-anchor=&quot;middle&quot; dominant-baseline=&quot;middle&quot; font-size=&quot;25&quot;>❓</text></svg>'">
-                                    <div class="item-name">?</div>
-                                </div>
-                            @endfor
+                            <!-- Marcador central fixo -->
+                            <div class="roulette-center-marker"></div>
+                            <!-- Container que vai deslizar -->
+                            <div class="roulette-container" id="roulette-container">
+                                <!-- Slots serão gerados via JavaScript -->
+                            </div>
                         </div>
 
                         <!-- Spin Button -->
@@ -403,38 +450,98 @@
     </div>
 </div>
 
+<!-- GSAP Library para animações fluidas -->
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+
 <script>
     const rouletteItemsData = @json($roulette_items);
     const spinBtn = document.getElementById('spin-btn');
     const cashPointsElement = document.getElementById('cash-points');
-    const slots = document.querySelectorAll('.roulette-slot');
-
-    // Inicializar slots com itens aleatórios ao carregar a página
-    function initializeSlots() {
-        slots.forEach((slot, index) => {
-            const randomIndex = Math.floor(Math.random() * rouletteItemsData.length);
-            const item = rouletteItemsData[randomIndex];
-            
-            slot.className = `roulette-slot ${index === 3 ? 'roulette-center-slot' : ''} rarity-${item.rarity}`;
-            
-            const img = slot.querySelector('img');
-            img.src = `https://static.divine-pride.net/images/items/item/${item.id}.png`;
-            img.alt = item.name;
-            img.onerror = function() {
-                this.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50"><text x="25" y="25" text-anchor="middle" dominant-baseline="middle" font-size="30">❓</text></svg>';
-            };
-            
-            slot.querySelector('.item-name').textContent = item.name;
-        });
-    }
+    const rouletteContainer = document.getElementById('roulette-container');
+    const accountSelector = document.getElementById('account-selector');
+    const selectedAccountName = document.getElementById('selected-account-name');
+    let isAnimating = false;
+    let slots = [];
 
     // Inicializar slots ao carregar
-    initializeSlots();
+    function initializeSlots() {
+        rouletteContainer.innerHTML = '';
+        slots = [];
+        
+        // Verificar se há itens suficientes
+        if (rouletteItemsData.length === 0) {
+            console.error('Nenhum item disponível na roleta');
+            showNotification('Nenhum item disponível na roleta', 'error');
+            return;
+        }
+        
+        // Criar 9 slots visíveis (4 antes do centro + 1 centro + 4 depois)
+        for (let i = 0; i < 9; i++) {
+            // Usar índice circular para repetir itens se houver poucos
+            const item = rouletteItemsData[i % rouletteItemsData.length];
+            const slot = createSlot(item);
+            rouletteContainer.appendChild(slot);
+            slots.push(slot);
+        }
+        
+        console.log('Slots inicializados:', slots.length);
+    }
+
+    function createSlot(item) {
+        const slot = document.createElement('div');
+        slot.className = `roulette-slot rarity-${item.rarity || 0}`;
+        
+        slot.innerHTML = `
+            <img src="https://static.divine-pride.net/images/items/item/${item.id}.png" 
+                 alt="${item.name}"
+                 onerror="this.src='data:image/svg+xml,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; width=&quot;40&quot; height=&quot;40&quot;><text x=&quot;20&quot; y=&quot;20&quot; text-anchor=&quot;middle&quot; dominant-baseline=&quot;middle&quot; font-size=&quot;25&quot;>❓</text></svg>'">
+            <div class="item-name">${item.name || '?'}</div>
+        `;
+        
+        slot.dataset.itemId = item.id;
+        slot.dataset.itemName = item.name;
+        slot.dataset.rarity = item.rarity || 0;
+        
+        return slot;
+    }
+    // Event listener para mudança de conta
+    accountSelector.addEventListener('change', function() {
+        const accountId = this.value;
+        const accountName = this.options[this.selectedIndex].text.split(' (ID:')[0];
+        
+        // Enviar requisição para trocar conta
+        fetch('{{ route('roulette.selectAccount') }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                account_id: accountId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Atualizar cash points
+                cashPointsElement.textContent = data.cash_points.toLocaleString('pt-BR');
+                selectedAccountName.textContent = data.account_name;
+                showNotification(`Conta alterada para: ${data.account_name}`, 'success');
+            } else {
+                showNotification(data.message || 'Erro ao trocar de conta', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Erro ao trocar de conta', 'error');
+        });
+    });
 
     spinBtn.addEventListener('click', function() {
-        if (spinBtn.disabled) return;
+        if (spinBtn.disabled || isAnimating) return;
 
         spinBtn.disabled = true;
+        isAnimating = true;
         spinBtn.classList.add('spinning');
 
         // AJAX para girar
@@ -448,11 +555,12 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Animar slots
-                animateSlots(data.winning_index, data.item, data.cash_points);
+                // Animar slots com GSAP
+                animateSlotsGSAP(data.winning_index, data.item, data.cash_points);
             } else {
                 showNotification(data.message || 'Erro ao girar a roleta', 'error');
                 spinBtn.disabled = false;
+                isAnimating = false;
                 spinBtn.classList.remove('spinning');
             }
         })
@@ -460,67 +568,173 @@
             console.error('Error:', error);
             showNotification('Erro ao processar requisição', 'error');
             spinBtn.disabled = false;
+            isAnimating = false;
             spinBtn.classList.remove('spinning');
         });
     });
 
-    function animateSlots(winningIndex, winningItem, newPoints) {
-        let currentFrame = 0;
-        const totalFrames = 40;
-        const frameInterval = 80;
-
-        const animationInterval = setInterval(() => {
-            currentFrame++;
-
-            // Atualizar todos os slots com itens aleatórios
-            slots.forEach((slot, index) => {
-                const randomIndex = Math.floor(Math.random() * rouletteItemsData.length);
-                const item = rouletteItemsData[randomIndex];
-                
-                slot.className = `roulette-slot ${index === 3 ? 'roulette-center-slot' : ''} rarity-${item.rarity}`;
-                
-                const img = slot.querySelector('img');
-                img.src = `https://static.divine-pride.net/images/items/item/${item.id}.png`;
-                img.alt = item.name;
-                img.onerror = function() {
-                    this.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50"><text x="25" y="25" text-anchor="middle" dominant-baseline="middle" font-size="30">❓</text></svg>';
-                };
-                
-                slot.querySelector('.item-name').textContent = item.name;
-            });
-
-            if (currentFrame >= totalFrames) {
-                clearInterval(animationInterval);
-
-                // Mostrar item vencedor no slot central
-                const centerSlot = slots[3];
-                centerSlot.className = `roulette-slot roulette-center-slot rarity-${winningItem.id > 0 ? '3' : '0'}`;
-                
-                const centerImg = centerSlot.querySelector('img');
-                centerImg.src = `https://static.divine-pride.net/images/items/item/${winningItem.id}.png`;
-                centerImg.alt = winningItem.name;
-                centerImg.onerror = function() {
-                    this.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50"><text x="25" y="25" text-anchor="middle" dominant-baseline="middle" font-size="30">❓</text></svg>';
-                };
-                
-                centerSlot.querySelector('.item-name').textContent = winningItem.name;
-
-                // Atualizar pontos
-                cashPointsElement.textContent = newPoints.toLocaleString('pt-BR');
-
-                // Mostrar notificação
-                if (winningItem.id > 0) {
-                    showNotification(`🎉 Você ganhou: ${winningItem.name}!`, 'success');
-                } else {
-                    showNotification('😢 Que pena! Tente novamente.', 'error');
-                }
-
-                // Recarregar após 3 segundos
-                setTimeout(() => {
-                    window.location.reload();
-                }, 3000);
+    function animateSlotsGSAP(winningIndex, winningItem, newPoints) {
+        const totalItems = 60; // Total de itens que vão "passar"
+        const visibleSlots = 9; // Manter sempre 9 slots visíveis
+        
+        // Garantir que temos itens suficientes
+        if (rouletteItemsData.length === 0) {
+            showNotification('Erro: Nenhum item disponível na roleta', 'error');
+            isAnimating = false;
+            spinBtn.disabled = false;
+            spinBtn.classList.remove('spinning');
+            return;
+        }
+        
+        // Criar array com todos os itens que vão aparecer
+        const itemSequence = [];
+        for (let i = 0; i < totalItems; i++) {
+            if (i === totalItems - 5) { 
+                // Item vencedor aparece exatamente para parar no centro (slot 4 de 9)
+                itemSequence.push(winningItem);
+            } else {
+                // Usar aleatoriedade para repetir itens se houver poucos
+                const randomItem = rouletteItemsData[Math.floor(Math.random() * rouletteItemsData.length)];
+                itemSequence.push(randomItem);
             }
-        }, frameInterval);
+        }
+        
+        let currentIndex = 0;
+        let animationSpeed = 30; // ms por frame inicialmente (bem rápido)
+        const minSpeed = 30;
+        const maxSpeed = 150; // ms por frame no final (lento)
+        
+        function updateFrame() {
+            // Manter sempre exatamente 9 slots visíveis
+            if (slots.length >= visibleSlots) {
+                const firstSlot = slots.shift();
+                if (firstSlot && firstSlot.parentNode) {
+                    firstSlot.remove();
+                }
+            }
+            
+            // Adicionar novo slot no final
+            if (currentIndex < itemSequence.length) {
+                const newSlot = createSlot(itemSequence[currentIndex]);
+                rouletteContainer.appendChild(newSlot);
+                slots.push(newSlot);
+                
+                // Animar entrada suave
+                gsap.fromTo(newSlot, 
+                    { opacity: 0, scale: 0.8 },
+                    { opacity: 1, scale: 1, duration: 0.2 }
+                );
+            }
+            
+            currentIndex++;
+            
+            // Calcular velocidade (desacelerar progressivamente)
+            const progress = currentIndex / totalItems;
+            animationSpeed = minSpeed + (maxSpeed - minSpeed) * Math.pow(progress, 3);
+            
+            // Continuar animação
+            if (currentIndex < totalItems) {
+                setTimeout(updateFrame, animationSpeed);
+            } else {
+                // Animação terminou - o item vencedor deve estar no centro (posição 4)
+                setTimeout(() => {
+                    const centerIndex = Math.floor(visibleSlots / 2); // Posição 4 (centro de 9)
+                    const winningSlot = slots[centerIndex];
+                    
+                    if (!winningSlot) {
+                        console.error('Slot vencedor não encontrado');
+                        isAnimating = false;
+                        spinBtn.disabled = false;
+                        spinBtn.classList.remove('spinning');
+                        return;
+                    }
+                    
+                    // Verificar se é o item correto, senão forçar
+                    if (parseInt(winningSlot.dataset.itemId) !== winningItem.id) {
+                        console.log('Corrigindo item vencedor no centro');
+                        winningSlot.className = `roulette-slot rarity-${winningItem.rarity || 0}`;
+                        winningSlot.querySelector('img').src = `https://static.divine-pride.net/images/items/item/${winningItem.id}.png`;
+                        winningSlot.querySelector('.item-name').textContent = winningItem.name;
+                        winningSlot.dataset.itemId = winningItem.id;
+                        winningSlot.dataset.itemName = winningItem.name;
+                    }
+                    
+                    showWinningItem(winningSlot, winningItem, newPoints);
+                }, 300);
+            }
+        }
+        
+        // Iniciar animação
+        updateFrame();
+    }
+
+    function updateSlot(slot, item, isCenter) {
+        slot.className = `roulette-slot rarity-${item.rarity || 0}`;
+        
+        const img = slot.querySelector('img');
+        const imgSrc = `https://static.divine-pride.net/images/items/item/${item.id}.png`;
+        
+        // Só atualizar se for diferente (performance)
+        if (img.src !== imgSrc) {
+            img.src = imgSrc;
+            img.alt = item.name;
+            img.onerror = function() {
+                this.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50"><text x="25" y="25" text-anchor="middle" dominant-baseline="middle" font-size="30">❓</text></svg>';
+            };
+        }
+        
+        slot.querySelector('.item-name').textContent = item.name || '?';
+    }
+
+    function showWinningItem(winningSlot, winningItem, newPoints) {
+        // Animar slot vencedor com pulso
+        gsap.timeline()
+            .to(winningSlot, {
+                scale: 1.2,
+                duration: 0.3,
+                ease: "back.out(1.7)"
+            })
+            .to(winningSlot, {
+                scale: 1,
+                duration: 0.2
+            })
+            .to(winningSlot, {
+                scale: 1.15,
+                duration: 0.15,
+                yoyo: true,
+                repeat: 3
+            });
+        
+        // Atualizar pontos com animação
+        const currentPoints = parseInt(cashPointsElement.textContent.replace(/\./g, '')) || 0;
+        gsap.to({ value: currentPoints }, {
+            value: newPoints,
+            duration: 1,
+            onUpdate: function() {
+                cashPointsElement.textContent = Math.floor(this.targets()[0].value).toLocaleString('pt-BR');
+            }
+        });
+
+        // Mostrar notificação
+        if (winningItem.id > 0) {
+            showNotification(`🎉 Você ganhou: ${winningItem.name}!`, 'success');
+        } else {
+            showNotification('😢 Que pena! Tente novamente.', 'error');
+        }
+
+        // Reabilitar botão e resetar slots após 2 segundos
+        setTimeout(() => {
+            isAnimating = false;
+            spinBtn.disabled = false;
+            spinBtn.classList.remove('spinning');
+            // Resetar slots para estado inicial
+            initializeSlots();
+        }, 2500);
+    }
+
+    function animateSlots(winningIndex, winningItem, newPoints) {
+        // Fallback para navegadores sem GSAP (mantido por segurança)
+        animateSlotsGSAP(winningIndex, winningItem, newPoints);
     }
 
     function showNotification(message, type = 'success') {
@@ -578,9 +792,22 @@
         });
     }
 
-    // Ativar listeners na primeira carga
+    // Ativar listeners e inicializar slots na primeira carga
     document.addEventListener('DOMContentLoaded', function() {
-        attachPaginationListeners();
+        console.log('DOM carregado, inicializando slots...');
+        console.log('rouletteContainer:', rouletteContainer);
+        console.log('Itens disponíveis:', rouletteItemsData.length);
+        
+        // Garantir que GSAP está carregado
+        if (typeof gsap === 'undefined') {
+            console.error('GSAP não carregado!');
+        }
+        
+        // Inicializar slots
+        setTimeout(() => {
+            initializeSlots();
+            attachPaginationListeners();
+        }, 100);
     });
 </script>
 @endsection
