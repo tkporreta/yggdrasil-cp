@@ -371,25 +371,38 @@
                             
                             @if($history->hasPages())
                             <div class="flex justify-center gap-2 mt-4">
-                                @if($history->onFirstPage())
-                                    <span class="px-3 py-1 rounded bg-gray-200 text-gray-400 cursor-not-allowed">‹</span>
-                                @else
-                                    <a href="#" class="history-pagination-btn px-3 py-1 rounded bg-brand-main text-white hover:bg-brand-green transition-colors" data-page="{{ $history->currentPage() - 1 }}">‹</a>
-                                @endif
+                                <!-- Seta esquerda -->
+                                <a href="#" class="history-pagination-btn px-3 py-1 rounded {{ $history->onFirstPage() ? 'bg-gray-200 text-gray-400 cursor-not-allowed pointer-events-none' : 'bg-brand-main text-white hover:bg-brand-green' }} transition-colors" data-page="{{ $history->currentPage() - 1 }}">‹</a>
                                 
-                                @foreach(range(1, $history->lastPage()) as $page)
-                                    @if($page == $history->currentPage())
+                                @php
+                                    $currentPage = $history->currentPage();
+                                    $lastPage = $history->lastPage();
+                                    $maxPages = 8;
+                                    
+                                    // Calcular range de páginas a exibir
+                                    if ($lastPage <= $maxPages) {
+                                        $startPage = 1;
+                                        $endPage = $lastPage;
+                                    } else {
+                                        $startPage = max(1, $currentPage - floor($maxPages / 2));
+                                        $endPage = min($lastPage, $startPage + $maxPages - 1);
+                                        
+                                        if ($endPage - $startPage < $maxPages - 1) {
+                                            $startPage = max(1, $endPage - $maxPages + 1);
+                                        }
+                                    }
+                                @endphp
+                                
+                                @foreach(range($startPage, $endPage) as $page)
+                                    @if($page == $currentPage)
                                         <span class="px-3 py-1 rounded bg-brand-main text-white font-bold">{{ $page }}</span>
                                     @else
                                         <a href="#" class="history-pagination-btn px-3 py-1 rounded bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors" data-page="{{ $page }}">{{ $page }}</a>
                                     @endif
                                 @endforeach
                                 
-                                @if($history->hasMorePages())
-                                    <a href="#" class="history-pagination-btn px-3 py-1 rounded bg-brand-main text-white hover:bg-brand-green transition-colors" data-page="{{ $history->currentPage() + 1 }}">›</a>
-                                @else
-                                    <span class="px-3 py-1 rounded bg-gray-200 text-gray-400 cursor-not-allowed">›</span>
-                                @endif
+                                <!-- Seta direita -->
+                                <a href="#" class="history-pagination-btn px-3 py-1 rounded {{ $history->hasMorePages() ? 'bg-brand-main text-white hover:bg-brand-green' : 'bg-gray-200 text-gray-400 cursor-not-allowed pointer-events-none' }} transition-colors" data-page="{{ $history->currentPage() + 1 }}">›</a>
                             </div>
                             @endif
                         </div>
@@ -526,6 +539,10 @@
                 // Atualizar cash points
                 cashPointsElement.textContent = data.cash_points.toLocaleString('pt-BR');
                 selectedAccountName.textContent = data.account_name;
+                
+                // Atualizar histórico
+                loadHistoryForAccount(accountId);
+                
                 showNotification(`Conta alterada para: ${data.account_name}`, 'success');
             } else {
                 showNotification(data.message || 'Erro ao trocar de conta', 'error');
@@ -536,6 +553,55 @@
             showNotification('Erro ao trocar de conta', 'error');
         });
     });
+
+    // Função para carregar histórico de uma conta específica
+    function loadHistoryForAccount(accountId) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('account_id', accountId);
+        url.searchParams.delete('page'); // Reset para página 1
+
+        fetch(url.toString(), {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.text())
+        .then(html => {
+            // Criar elemento temporário para parsear HTML
+            const temp = document.createElement('div');
+            temp.innerHTML = html;
+            
+            // Encontrar todas as roulette-cards
+            const allCards = temp.querySelectorAll('.roulette-card');
+            
+            // Encontrar a card de histórico (aquela que contém "Últimas Rolagens")
+            let newHistoryCard = null;
+            allCards.forEach(card => {
+                const h3 = card.querySelector('h3');
+                if (h3 && h3.textContent.includes('Últimas Rolagens')) {
+                    newHistoryCard = card;
+                }
+            });
+            
+            // Encontrar a card de histórico atual
+            const currentCards = document.querySelectorAll('.roulette-card h3');
+            let currentHistoryCard = null;
+            currentCards.forEach(h3 => {
+                if (h3.textContent.includes('Últimas Rolagens')) {
+                    currentHistoryCard = h3.closest('.roulette-card');
+                }
+            });
+            
+            // Substituir conteúdo
+            if (newHistoryCard && currentHistoryCard) {
+                currentHistoryCard.innerHTML = newHistoryCard.innerHTML;
+                attachPaginationListeners();
+            }
+        })
+        .catch(error => {
+            console.error('Erro ao carregar histórico:', error);
+        });
+    }
 
     spinBtn.addEventListener('click', function() {
         if (spinBtn.disabled || isAnimating) return;

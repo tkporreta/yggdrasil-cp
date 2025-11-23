@@ -54,6 +54,15 @@ class RouletteController extends Controller
         // Pegar conta selecionada da sessão ou primeira conta
         $selectedAccountId = session('roulette_account_id', $gameAccounts->first()->account_id);
         
+        // Se vier account_id via query string (AJAX), usar ele
+        if (request()->has('account_id') && request()->ajax()) {
+            $requestedAccountId = request()->get('account_id');
+            // Verificar se a conta pertence ao usuário
+            if ($gameAccounts->contains('account_id', $requestedAccountId)) {
+                $selectedAccountId = $requestedAccountId;
+            }
+        }
+        
         // Verificar se a conta selecionada pertence ao usuário
         $selectedAccount = $gameAccounts->firstWhere('account_id', $selectedAccountId);
         if (!$selectedAccount) {
